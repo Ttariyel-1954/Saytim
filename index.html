@@ -1996,7 +1996,29 @@
 
     <script>
         // Global variables
-        let uploadedFiles = [];
+        // Initialize with sample data
+let uploadedFiles = [
+    {
+        id: 1,
+        title: "Testologiya Elmi: Müasir Perspektivlər",
+        name: "testologiya_2024.pdf",
+        type: "pdf",
+        description: "15 illik tədqiqat təcrübəsi əsasında testologiya elminin müasir vəziyyəti",
+        addedDate: "2024-01-15",
+        status: "completed",
+        url: "https://rpubs.com/talibov_tariyel/testologiya-analiz"
+    },
+    {
+        id: 2,
+        title: "R Dili ilə Təhsil Analitikası",
+        name: "r_education_analytics.rmd",
+        type: "rmd",
+        description: "Shiny və digər R paketlərinin təhsil sektorunda tətbiqi",
+        addedDate: "2024-02-10",
+        status: "completed",
+        url: "https://rpubs.com/talibov_tariyel/r-education-statistics"
+    }
+];
         let uploadedApps = [];
         let externalLinks = [];
         let currentFilter = 'all';
