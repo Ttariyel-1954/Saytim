@@ -1,6 +1,43 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Site</title>
+  <style>
+    /* — Buraya sizin mövcud CSS kodlarınız gələcək — */
+    body { font-family: Arial, sans-serif; }
+    /* … */
+
+    /* Redaktor interfeysi üçün stil */
+    #editorUI {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      display: none;
+      flex-direction: column;
+      padding: 1rem;
+      z-index: 9999;
+    }
+    #editorArea {
+      flex: 1;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    #editorUI button {
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== SİZİN MÖVCUD SƏHİFƏ MƏZMUNUNUZ BURADA ========== -->
+  <div id="app">
+<!DOCTYPE html>
+<html lang="az">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talıbov Tariyel İsmayıl oğlu - Riyaziyyat üzrə fəlsəfə doktoru</title>
@@ -4150,5 +4187,122 @@ plot(cars)
             }, 2000);
         });
     </script>
+</body>
+</html>
+  </div>
+  <!-- ========================================================== -->
+
+  <!-- ======= Redaktor Overlay UI ======= -->
+  <div id="editorUI">
+    <h2>Brauzer Daxili Redaktor</h2>
+    <textarea id="editorArea"></textarea>
+    <div>
+      <button id="saveBtn">GitHub-a Saxla</button>
+      <button id="cancelBtn">Ləğv Et</button>
+    </div>
+    <div id="editorStatus"></div>
+  </div>
+
+  <!-- ======= Redaktə düyməsi ======= -->
+  <button id="editBtn"
+          style="position:fixed;bottom:1rem;right:1rem;padding:0.5rem 1rem;">
+    ✏️ Redaktə et
+  </button>
+
+  <script>
+  (function(){
+    // === Konfiqurasiya ===
+    const OWNER  = 'sizin-username';    // ← öz GitHub istifadəçi adınız
+    const REPO   = 'my-site';           // ← sizin repo adı
+    const BRANCH = 'main';              // ← 'main' və ya 'master'
+    const PATH   = 'index.html';        // ← redaktə olunacaq fayl
+    // ======================
+
+    // Elementləri seçək
+    const editBtn      = document.getElementById('editBtn');
+    const editorUI     = document.getElementById('editorUI');
+    const editorArea   = document.getElementById('editorArea');
+    const saveBtn      = document.getElementById('saveBtn');
+    const cancelBtn    = document.getElementById('cancelBtn');
+    const editorStatus = document.getElementById('editorStatus');
+    let fileSha        = null;  // commit üçün lazım olan orijinal SHA
+
+    // 1) GitHub-dan cari index.html faylını yükləyək
+    async function loadFromGitHub() {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?ref=${BRANCH}`;
+      const resp = await fetch(url, {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!resp.ok) throw new Error(`Yükləmə xətası: ${resp.status}`);
+      const data = await resp.json();
+      fileSha = data.sha;
+      // Base64 → UTF-8 çevirmək
+      const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+      editorArea.value = content;
+    }
+
+    // 2) “Redaktə et” düyməsi kliklənəndə
+    editBtn.addEventListener('click', async () => {
+      editBtn.disabled = true;
+      editorStatus.textContent = 'Yüklənir…';
+      try {
+        await loadFromGitHub();
+        editorUI.style.display = 'flex';
+      } catch(err) {
+        alert('Xəta: ' + err.message);
+      } finally {
+        editorStatus.textContent = '';
+        editBtn.disabled = false;
+      }
+    });
+
+    // 3) “Ləğv et” düyməsi
+    cancelBtn.addEventListener('click', () => {
+      editorUI.style.display = 'none';
+    });
+
+    // 4) “GitHub-a Saxla” düyməsi
+    saveBtn.addEventListener('click', async () => {
+      const token = prompt('Personal Access Token daxil edin:');
+      if (!token) return alert('Token tələb olunur');
+      saveBtn.disabled = true;
+      editorStatus.textContent = 'Saxlanır…';
+
+      // UTF-8 → Base64 çevirmək
+      const updated = btoa(unescape(encodeURIComponent(editorArea.value)));
+      const commit = {
+        message: `Brauzerdən redaktə: ${new Date().toISOString()}`,
+        content: updated,
+        sha: fileSha,
+        branch: BRANCH
+      };
+
+      try {
+        const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+        const resp = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(commit)
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(`${resp.status}: ${err.message}`);
+        }
+        alert('✅ Uğurla saxlanıldı!');
+        // Yenidən yükləyək ki, dəyişiklikləri görəsiniz
+        window.location.reload();
+      } catch(err) {
+        alert('Saxlanma xətası: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        editorStatus.textContent = '';
+      }
+    });
+
+  })();
+  </script>
 </body>
 </html>
